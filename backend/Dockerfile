@@ -14,8 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Proje dosyalarını kopyala
 COPY . .
 
-# Flask uygulamasının çalışacağı port
-EXPOSE 5000
+# Cloud Run otomatik olarak PORT ortam değişkenini atar (varsayılan 8080)
+ENV PORT=8080
+EXPOSE $PORT
 
 # Gunicorn ile production sunucusunu başlat
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "run:app"]
+CMD exec gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 8 --timeout 0 run:app
