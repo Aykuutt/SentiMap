@@ -1,28 +1,21 @@
-# 1. Hekaton Şartnamesi Gereği Hafif ve Güvenli python:3.9-slim Temel İmajı
-FROM python:3.9-slim
+FROM python:3.11-slim
 
-# Python çıktılarının tamponlanmadan doğrudan terminale aktarılmasını sağlar
-ENV PYTHONUNBUFFERED=1
-
-# Uygulama çalışma dizinini belirliyoruz
 WORKDIR /app
 
-# 2. Layer Caching (Katman Önbellekleme) Standardı
-# Gereksiz derlemeleri önlemek için önce sadece requirements.txt kopyalanıp kurulur
-COPY requirements.txt .
+# İşletim sistemi seviyesindeki gereksinimler (gerekirse)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
-# requirements.txt içindeki paketleri pip ile yüklüyoruz.
-# Cache temizliği yaparak imaj boyutunu optimize ediyoruz.
+# Bağımlılıkları kopyala ve yükle
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 3. Kalan Tüm Uygulama Kodlarını Kopyalıyoruz
+# Proje dosyalarını kopyala
 COPY . .
 
-# 4. Port Tanımlamaları ve Expose Standardı
-# Port çevre değişkenini ve dinlenecek portu 8080 olarak yapılandırıyoruz
-ENV PORT 8080
-EXPOSE 8080
+# Flask uygulamasının çalışacağı port
+EXPOSE 5000
 
-# 5. Gunicorn Başlatıcı Standardı (Birebir Uyumlu)
-# Gunicorn WSGI sunucusunu 1 worker, 8 threads ve 0 timeout ile hekaton spesifikasyonlarına uygun olarak başlatıyoruz
-CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 "app:create_app()"
+# Gunicorn ile production sunucusunu başlat
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "run:app"]
