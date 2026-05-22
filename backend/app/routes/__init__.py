@@ -120,6 +120,53 @@ def generate_ai_suggestions(sentiment_label, score, category="General"):
         
     return suggestions
 
+def extract_keywords(reviews_text_list):
+    """
+    Tüm yorumlardan sık geçen anlamlı kelimeleri çıkarır ve
+    sentiment sözlüğüne göre etiketler.
+    """
+    STOP_WORDS = {
+        've', 'bir', 'bu', 'da', 'de', 'ile', 'için', 'ama', 'ya', 'en', 'biz', 'ben',
+        'o', 'bu', 'şu', 'ne', 'olan', 'benim', 'kadar', 'gibi', 'ise', 'daha',
+        'the', 'a', 'an', 'is', 'was', 'are', 'were', 'i', 'we', 'it', 'to', 'of',
+        'and', 'in', 'on', 'at', 'for', 'with', 'that', 'this', 'but', 'not', 'so',
+        'very', 'just', 'they', 'my', 'me', 'you', 'as', 'our', 'had', 'have',
+        'here', 'there', 'be', 'been', 'from', 'by'
+    }
+    
+    word_counts = {}
+    word_types = {}
+    
+    for text in reviews_text_list:
+        if not text:
+            continue
+        words = text.lower().replace(',', ' ').replace('.', ' ').replace('!', ' ').split()
+        for word in words:
+            word = word.strip()
+            if len(word) < 4 or word in STOP_WORDS:
+                continue
+            word_counts[word] = word_counts.get(word, 0) + 1
+            # Kelime tipini belirle
+            if word in POSITIVE_WORDS:
+                word_types[word] = 'positive'
+            elif word in NEGATIVE_WORDS:
+                word_types[word] = 'negative'
+            else:
+                word_types[word] = 'neutral'
+    
+    # Frekansa göre sırala ve top 8 al
+    sorted_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:8]
+    
+    keywords = []
+    for word, count in sorted_words:
+        keywords.append({
+            'word': word.capitalize(),
+            'count': count,
+            'type': word_types.get(word, 'neutral')
+        })
+    
+    return keywords
+
 @api_bp.route('/analyze', methods=['POST'])
 def analyze_reviews():
     """
@@ -194,6 +241,10 @@ def analyze_reviews():
         else:
             overall_label = 'neutral'
             
+        # Yorumlardan anahtar kelimeleri çıkar
+        all_review_texts = [rev.get('text', '') for rev in reviews if rev.get('text')]
+        keywords = extract_keywords(all_review_texts)
+            
         # Rakip analizi verilerini dinamik simüle et veya frontend'den geleni kullan
         if competitors_data:
             competitors = [{'name': c.get('name'), 'score': int(c.get('rating', 3) * 20)} for c in competitors_data]
@@ -231,6 +282,7 @@ def analyze_reviews():
             'neutral': neutral_count,
             'total': len(reviews)
         },
+        'keywords': keywords,
         'analyzed_reviews': analyzed_reviews,
         'suggestions': suggestions,
         'competitors': competitors

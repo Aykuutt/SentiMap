@@ -1047,26 +1047,29 @@ export const BusinessDashboard = ({ currentUser, isLoaded, onLogout }) => {
               </div>
               
               <div className="flex-1 flex flex-col justify-center space-y-4">
-                {[
-                  { word: 'Lezzet / Kalite', count: 85, type: 'positive' },
-                  { word: 'Servis Hızı', count: 60, type: 'negative' },
-                  { word: 'Fiyatlandırma', count: 45, type: 'neutral' },
-                  { word: 'Mekan Hijyeni', count: 70, type: 'positive' },
-                  { word: 'Personel Tutumu', count: 50, type: 'negative' }
-                ].sort((a,b) => b.count - a.count).map((kw, i) => (
-                  <div key={i} className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-bold">
-                      <span className="text-slate-300">{kw.word}</span>
-                      <span className={kw.type === 'positive' ? 'text-emerald-500' : kw.type === 'negative' ? 'text-red-500' : 'text-slate-400'}>{kw.count} Bahsedilme</span>
+                {analysisResult && analysisResult.keywords && analysisResult.keywords.length > 0 ? (() => {
+                  const maxCount = Math.max(...analysisResult.keywords.map(k => k.count));
+                  return analysisResult.keywords.map((kw, i) => (
+                    <div key={i} className="space-y-1.5">
+                      <div className="flex justify-between text-xs font-bold">
+                        <span className="text-slate-300">{kw.word}</span>
+                        <span className={kw.type === 'positive' ? 'text-emerald-500' : kw.type === 'negative' ? 'text-red-500' : 'text-slate-400'}>
+                          {kw.count} Bahsedilme
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-900/50 rounded-full h-2.5">
+                        <div 
+                          className={`h-2.5 rounded-full transition-all duration-700 ${kw.type === 'positive' ? 'bg-emerald-500' : kw.type === 'negative' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-slate-500'}`} 
+                          style={{ width: `${Math.round((kw.count / maxCount) * 100)}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-slate-900/50 rounded-full h-2.5">
-                      <div 
-                        className={`h-2.5 rounded-full ${kw.type === 'positive' ? 'bg-emerald-500' : kw.type === 'negative' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-slate-500'}`} 
-                        style={{ width: `${kw.count}%` }}
-                      ></div>
-                    </div>
+                  ));
+                })() : (
+                  <div className="py-12 text-center text-cyber-muted text-sm">
+                    {analysisResult ? 'Yorum metinlerinden anahtar kelime çıkarılamadı.' : 'Analiz tamamlandıktan sonra anahtar kelimeler burada görünecek.'}
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
